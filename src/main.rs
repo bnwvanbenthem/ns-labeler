@@ -99,6 +99,8 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
             }
         }
 
+        status::print(client.clone(), &name, &namespace).await?;
+
         Ok(Action::requeue(Duration::from_secs(30)))
 
     }
