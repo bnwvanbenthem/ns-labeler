@@ -1,0 +1,30 @@
+[package]
+name = "nslo"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+tokio = { version = "1.0", features = [
+    "macros",
+    "rt-multi-thread",
+] } # Macros for easy project setup and testing, multi-threaded runtime for best utilization of resources
+kube = { version = "0.87.2", default-features = true, features = [
+    "derive",
+    "runtime",
+] } # Library for talking to Kubernetes API
+k8s-openapi = { version = "0.20.0", default-features = false, features = [
+    "v1_26",
+] } # Kube-rs depends on k8s-openapi
+futures = "0.3"
+# All serde dependencies are used to serialize/deserialize CRDs and other Kubernetes-related structs
+serde = "1"
+serde_json = "1.0"
+schemars = "0.8"
+thiserror = "1"    # Custom Error definitions and convenient error mappings
+garde = { version = "0.16.1", default-features = false, features = ["derive"] }
+anyhow = "1.0.44"
+tracing = "0.1.36"
+tracing-subscriber = "0.3.3"
+azure_core = "0.13.0"
+azure_identity = "0.13.0"
+azure_security_keyvault = "0.13.0"

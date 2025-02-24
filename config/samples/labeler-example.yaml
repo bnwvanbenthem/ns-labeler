@@ -1,0 +1,17 @@
+apiVersion: cndev.nl/v1beta1
+kind: Labeler
+metadata:
+  name: example-labeler
+  namespace: default
+spec:
+  labels:
+    - key: "customer"
+      value: "my-customer-a"
+    - key: "env"
+      value: "development"
+  annotations:
+    - key: "customer"
+      value: "my-customer-a"
+  exclude_list:
+    - "kube-system"
+    - "monitoring"
