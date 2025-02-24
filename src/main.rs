@@ -1,7 +1,6 @@
-use nslo::crd::Labeler;
-use nslo::status;
+use nslabeler::crd::Labeler;
+use nslabeler::status;
 
-use anyhow::Result;
 use futures::stream::StreamExt;
 use kube::runtime::watcher::Config;
 use kube::{client::Client, runtime::controller::Action, runtime::Controller, Api};
@@ -10,8 +9,25 @@ use std::sync::Arc;
 use tokio::time::Duration;
 use tracing::*;
 
+/// Context injected with each `reconcile` and `on_error` method invocation.
+struct ContextData {
+    /// Kubernetes client to make Kubernetes API requests with. Required for K8S resource management.
+    client: Client,
+}
+
+impl ContextData {
+    /// Constructs a new instance of ContextData.
+    ///
+    /// # Arguments:
+    /// - `client`: A Kubernetes client to make Kubernetes REST API requests with. Resources
+    /// will be created and deleted with this client.
+    pub fn new(client: Client) -> Self {
+        ContextData { client }
+    }
+}
+
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), kube::Error> {
     tracing_subscriber::fmt::init();
     // First, a Kubernetes client must be obtained using the `kube` crate
     // The client will later be moved to the custom controller
@@ -42,23 +58,8 @@ async fn main() {
             }
         })
         .await;
-}
 
-/// Context injected with each `reconcile` and `on_error` method invocation.
-struct ContextData {
-    /// Kubernetes client to make Kubernetes API requests with. Required for K8S resource management.
-    client: Client,
-}
-
-impl ContextData {
-    /// Constructs a new instance of ContextData.
-    ///
-    /// # Arguments:
-    /// - `client`: A Kubernetes client to make Kubernetes REST API requests with. Resources
-    /// will be created and deleted with this client.
-    pub fn new(client: Client) -> Self {
-        ContextData { client }
-    }
+    Ok(())
 }
 
 async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action, Error> {
@@ -85,7 +86,7 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
 
     // Label logic !!!!!!!!!!!!!!!!!!!!!!!!!!
     {
-        info!("\nLabeling all the namespaces !\n");
+        info!("\n ! Labeling all the namespaces !\n");
 
         // Patch the status to true
         match status::patch(client.clone(), &name, &namespace, true).await {
@@ -145,3 +146,4 @@ pub enum Error {
     #[error("Invalid Labeler CRD: {0}")]
     UserInputError(String),
 }
+pub type Result<T, E = Error> = std::result::Result<T, E>;
