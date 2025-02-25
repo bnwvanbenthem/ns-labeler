@@ -12,6 +12,6 @@ spec:
   annotations:
     - key: "customer"
       value: "my-customer-a"
-  exclude_list:
+  excludeList:
     - "kube-system"
     - "monitoring"

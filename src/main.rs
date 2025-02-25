@@ -3,11 +3,14 @@ use nslabeler::status;
 
 use futures::stream::StreamExt;
 use kube::runtime::watcher::Config;
-use kube::{client::Client, runtime::controller::Action, runtime::Controller, Api};
 use kube::ResourceExt;
+use kube::{client::Client, runtime::controller::Action, runtime::Controller, Api};
 use std::sync::Arc;
 use tokio::time::Duration;
 use tracing::*;
+
+use k8s_openapi::api::core::v1::Namespace;
+use kube::api::{ListParams, Patch, PatchParams};
 
 /// Context injected with each `reconcile` and `on_error` method invocation.
 struct ContextData {
@@ -83,28 +86,58 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
 
     let name = cr.name_any(); // Name of the Labeler resource is used to name the subresources as well.
 
+    let labeler = cr.as_ref();
+    // Get all namespaces on the cluster
+    let namespaces: Api<Namespace> = Api::all(client.clone());
+    let ns_list = namespaces.list(&ListParams::default()).await?;
 
-    // Label logic !!!!!!!!!!!!!!!!!!!!!!!!!!
-    {
-        info!("\n ! Labeling all the namespaces !\n");
-
-        // Patch the status to true
-        match status::patch(client.clone(), &name, &namespace, true).await {
-            Ok(labeler) => {
-                info!("Successfully updated Labeler status '{}': {:?}", name, labeler.status);
-            }
-            Err(e) => {
-                error!("Failed to update Labeler status '{}': {:?}", name, e);
-                return Err(e.into());
-            }
+    for ns in ns_list {
+        let ns_name = ns.metadata.name.as_deref().unwrap_or("unnamed");
+        
+        if labeler.spec.excludelist.contains(&ns_name.to_string()) {
+            continue;
         }
 
-        status::patch(client.clone(), &name, &namespace, true).await?;
-        status::print(client.clone(), &name, &namespace).await?;
+        let mut needs_update = false;
+        let mut updated_ns = ns.clone();
 
-        Ok(Action::requeue(Duration::from_secs(30)))
+        // Handle labels
+        {
+            let mut labels = updated_ns.metadata.labels.unwrap_or_default();
+            for label in &labeler.spec.labels {
+                let current_value = labels.get(&label.key);
+                if current_value != Some(&label.value) {
+                    needs_update = true;
+                    labels.insert(label.key.clone(), label.value.clone());
+                }
+            }
+            updated_ns.metadata.labels = Some(labels);
+        }
 
+        // Handle annotations
+        {
+            let mut annotations = updated_ns.metadata.annotations.unwrap_or_default();
+            for annotation in &labeler.spec.annotations {
+                let current_value = annotations.get(&annotation.key);
+                if current_value != Some(&annotation.value) {
+                    needs_update = true;
+                    annotations.insert(annotation.key.clone(), annotation.value.clone());
+                }
+            }
+            updated_ns.metadata.annotations = Some(annotations);
+        }
+
+        if needs_update {
+            let patch = Patch::Merge(&updated_ns);
+            namespaces
+                .patch(ns_name, &PatchParams::default(), &patch)
+                .await?;
+            info!("Updated namespace: {}", ns_name);
+        }
     }
+    status::print(client.clone(), &name, &namespace).await?;
+
+    Ok(Action::requeue(Duration::from_secs(30)))
 }
 
 fn on_error(cr: Arc<Labeler>, error: &Error, context: Arc<ContextData>) -> Action {

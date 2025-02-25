@@ -21,7 +21,8 @@ pub struct LabelerSpec {
     #[garde(skip)]
     pub annotations: Vec<Annotation>,
     #[garde(skip)]
-    pub exclude_list: Vec<String>,
+    #[serde(rename = "excludeList")]
+    pub excludelist: Vec<String>,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone, Default, JsonSchema)]

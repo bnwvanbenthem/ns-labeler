@@ -37,7 +37,7 @@ spec:
                         type: string
                       value:
                         type: string
-                exclude_list:
+                excludeList:
                   type: array
                   items:
                     type: string
