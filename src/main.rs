@@ -135,6 +135,8 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
             info!("Updated namespace: {}", ns_name);
         }
     }
+    
+    status::patch(client.clone(), &name, &namespace, true).await?;
     status::print(client.clone(), &name, &namespace).await?;
 
     Ok(Action::requeue(Duration::from_secs(30)))
