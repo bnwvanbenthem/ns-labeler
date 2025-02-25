@@ -53,7 +53,7 @@ async fn main() -> Result<(), kube::Error> {
                     info!("Reconciliation successful. Resource: {:?}", custom_resource);
                 }
                 Err(reconciliation_err) => {
-                    error!("Reconciliation error: {:?}", reconciliation_err)
+                    warn!("Reconciliation error: {:?}", reconciliation_err)
                 }
             }
         })
@@ -99,6 +99,7 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
             }
         }
 
+        status::patch(client.clone(), &name, &namespace, true).await?;
         status::print(client.clone(), &name, &namespace).await?;
 
         Ok(Action::requeue(Duration::from_secs(30)))

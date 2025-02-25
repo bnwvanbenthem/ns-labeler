@@ -15,7 +15,7 @@ use serde::{Deserialize, Serialize};
     namespaced
 )]
 #[kube(status = "LabelerStatus")]
-pub struct NamespaceLabelerSpec {
+pub struct LabelerSpec {
     #[garde(skip)]
     pub labels: Vec<Label>,
     #[garde(skip)]
