@@ -7,11 +7,13 @@ spec:
   labels:
     - key: "customer"
       value: "my-customer-a"
-    - key: "env"
-      value: "development"
+    - key: "costcenter"
+      value: "department-a"
   annotations:
     - key: "customer"
       value: "my-customer-a"
   excludeList:
     - "kube-system"
+    - "kube-node-lease"
+    - "kube-public"
     - "monitoring"

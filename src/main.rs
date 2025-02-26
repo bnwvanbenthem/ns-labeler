@@ -1,5 +1,6 @@
 use tagging_operator::crd::Tagger;
 use tagging_operator::status;
+use tagging_operator::tags;
 
 use futures::stream::StreamExt;
 use kube::runtime::watcher::Config;
@@ -10,7 +11,7 @@ use tokio::time::Duration;
 use tracing::*;
 
 use k8s_openapi::api::core::v1::Namespace;
-use kube::api::{ListParams, Patch, PatchParams};
+use kube::api::ListParams;
 
 /// Context injected with each `reconcile` and `on_error` method invocation.
 struct ContextData {
@@ -92,51 +93,20 @@ async fn reconcile(cr: Arc<Tagger>, context: Arc<ContextData>) -> Result<Action,
     let ns_list = namespaces.list(&ListParams::default()).await?;
 
     for ns in ns_list {
+
         let ns_name = ns.metadata.name.as_deref().unwrap_or("unnamed");
-        
+
         if tagger.spec.excludelist.contains(&ns_name.to_string()) {
+            tags::delete_tags(cr.clone(), client.clone(), ns.clone()).await?;
             continue;
-        }
-
-        let mut needs_update = false;
-        let mut updated_ns = ns.clone();
-
-        // Handle labels
-        {
-            let mut labels = updated_ns.metadata.labels.unwrap_or_default();
-            for label in &tagger.spec.labels {
-                let current_value = labels.get(&label.key);
-                if current_value != Some(&label.value) {
-                    needs_update = true;
-                    labels.insert(label.key.clone(), label.value.clone());
-                }
-            }
-            updated_ns.metadata.labels = Some(labels);
-        }
-
-        // Handle annotations
-        {
-            let mut annotations = updated_ns.metadata.annotations.unwrap_or_default();
-            for annotation in &tagger.spec.annotations {
-                let current_value = annotations.get(&annotation.key);
-                if current_value != Some(&annotation.value) {
-                    needs_update = true;
-                    annotations.insert(annotation.key.clone(), annotation.value.clone());
-                }
-            }
-            updated_ns.metadata.annotations = Some(annotations);
-        }
-
-        if needs_update {
-            let patch = Patch::Merge(&updated_ns);
-            namespaces
-                .patch(ns_name, &PatchParams::default(), &patch)
-                .await?;
-            info!("Updated namespace: {}", ns_name);
+        } else {
+            tags::apply_tags(cr.clone(), client.clone(), ns.clone()).await?;
+            tags::apply_tagged_true_annotation(client.clone(), &ns_name).await?;
         }
     }
-    
+
     status::patch(client.clone(), &name, &namespace, true, vec![]).await?;
+
     status::print(client.clone(), &name, &namespace).await?;
 
     Ok(Action::requeue(Duration::from_secs(30)))

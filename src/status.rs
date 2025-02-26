@@ -10,7 +10,7 @@ pub async fn patch(
     name: &str,
     namespace: &str,
     success: bool,
-    tagged: Vec<String>
+    tagged: Vec<String>,
 ) -> Result<Tagger, Error> {
     let api: Api<Tagger> = Api::namespaced(client, namespace);
 
@@ -31,7 +31,10 @@ pub async fn print(client: Client, name: &str, namespace: &str) -> Result<(), Er
         "Got status succeeded {:?} for custom resource {} in namespace {}",
         cdb.clone()
             .status
-            .unwrap_or(TaggerStatus { succeeded: false, tagged: Vec::default() })
+            .unwrap_or(TaggerStatus {
+                succeeded: false,
+                tagged: Vec::default()
+            })
             .succeeded,
         cdb.name_any(),
         namespace
