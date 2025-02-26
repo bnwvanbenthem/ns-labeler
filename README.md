@@ -1,12 +1,12 @@
-# ns-labeler
-ns labeler
+# tagging-operator
+Kubernetes operator to automate the label and annotation logic through a custom resource. 
 
 ## CR Spec
 ```yaml
-apiVersion: cndev.nl/v1beta1
-kind: Labeler
+apiVersion: cncp.nl/v1beta1
+kind: Tagger
 metadata:
-  name: example-labeler
+  name: example-tagger
   namespace: default
 spec:
   labels:
@@ -17,66 +17,7 @@ spec:
   annotations:
     - key: "customer"
       value: "my-customer-a"
-  exclude_list:
+  excludeList:
     - "kube-system"
     - "monitoring"
-```
-
-## CRD Spec
-```yaml
-apiVersion: apiextensions.k8s.io/v1
-kind: CustomResourceDefinition
-metadata:
-  name: labelers.cndev.nl
-spec:
-  group: cndev.nl
-  names:
-    kind: Labeler
-    plural: labelers
-  scope: Namespaced
-  versions:
-    - name: v1beta1
-      schema:
-        openAPIV3Schema:
-          type: object
-          properties:
-            metadata:
-              type: object
-            spec:
-              type: object
-              properties:
-                labels:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                      value:
-                        type: string
-                annotations:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      key:
-                        type: string
-                      value:
-                        type: string
-                exclude_list:
-                  type: array
-                  items:
-                    type: string
-            status:
-              type: object
-              properties:
-                succeeded:
-                  type: boolean
-          required:
-            - spec
-      served: true
-      storage: true
-      subresources:
-        # status enables the status subresource.
-        status: {}
 ```

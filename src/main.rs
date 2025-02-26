@@ -1,5 +1,5 @@
-use tagging_forge::crd::Tagger;
-use tagging_forge::status;
+use tagging_operator::crd::Tagger;
+use tagging_operator::status;
 
 use futures::stream::StreamExt;
 use kube::runtime::watcher::Config;
