@@ -139,3 +139,28 @@ pub async fn apply_tagged_true_annotation(
     info!("Applied annotation tagger.cncp.nl=tagged to namespace {}", &namespace);
     Ok(())
 }
+
+pub async fn delete_tagged_true_annotation(
+    client: Client,
+    namespace: &str,
+) -> Result<(), kube::Error> {
+    
+    // Define the patch with the annotation
+    let patch = json!({
+        "metadata": {
+            "annotations": {
+                "tagger.cncp.nl": null
+            }
+        }
+    });
+
+    let namespaces: Api<Namespace> = Api::all(client.clone());
+
+    // Apply the patch directly to the specified namespace
+    namespaces
+        .patch(&namespace, &PatchParams::default(), &Patch::Merge(&patch))
+        .await?;
+
+    info!("Applied annotation tagger.cncp.nl=tagged to namespace {}", &namespace);
+    Ok(())
+}

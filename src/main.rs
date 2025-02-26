@@ -98,6 +98,7 @@ async fn reconcile(cr: Arc<Tagger>, context: Arc<ContextData>) -> Result<Action,
 
         if tagger.spec.excludelist.contains(&ns_name.to_string()) {
             tags::delete_tags(cr.clone(), client.clone(), ns.clone()).await?;
+            tags::delete_tagged_true_annotation(client.clone(), &ns_name).await?;
             continue;
         } else {
             tags::apply_tags(cr.clone(), client.clone(), ns.clone()).await?;
