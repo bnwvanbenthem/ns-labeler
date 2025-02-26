@@ -158,7 +158,7 @@ pub async fn apply_tagged_true_annotation(
             .await?;
 
         info!(
-            "Applied annotation tagger.cncp.nl=tagged to namespace {}",
+            "Applied Status annotation tagger.cncp.nl=tagged to namespace {}",
             &ns_name
         );
     }
@@ -201,7 +201,7 @@ pub async fn delete_tagged_true_annotation(
             .await?;
 
         info!(
-            "Removed annotation tagger.cncp.nl=tagged to namespace {}",
+            "Removed Status annotation tagger.cncp.nl=tagged to namespace {}",
             &ns_name
         );
     }
