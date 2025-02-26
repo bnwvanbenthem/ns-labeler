@@ -10,12 +10,12 @@ use serde::{Deserialize, Serialize};
 #[kube(
     group = "cncp.nl",
     version = "v1beta1",
-    kind = "Labeler",
-    plural = "labelers",
+    kind = "Tagger",
+    plural = "taggers",
     namespaced
 )]
-#[kube(status = "LabelerStatus")]
-pub struct LabelerSpec {
+#[kube(status = "TaggerStatus")]
+pub struct TaggerSpec {
     #[garde(skip)]
     pub labels: Vec<Label>,
     #[garde(skip)]
@@ -38,6 +38,7 @@ pub struct Annotation {
 }
 
 #[derive(Deserialize, Serialize, Clone, Debug, Default, JsonSchema)]
-pub struct LabelerStatus {
+pub struct TaggerStatus {
     pub succeeded: bool,
+    pub tagged: Vec<String>,
 }

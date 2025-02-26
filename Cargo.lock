@@ -845,23 +845,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "nslabeler"
-version = "0.1.0"
-dependencies = [
- "futures",
- "garde",
- "k8s-openapi",
- "kube",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tokio",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "nu-ansi-term"
 version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1442,6 +1425,23 @@ dependencies = [
  "proc-macro2",
  "quote",
  "unicode-ident",
+]
+
+[[package]]
+name = "tagging_forge"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "garde",
+ "k8s-openapi",
+ "kube",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]

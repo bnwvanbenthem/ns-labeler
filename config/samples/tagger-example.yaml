@@ -1,7 +1,7 @@
 apiVersion: cncp.nl/v1beta1
-kind: Labeler
+kind: Tagger
 metadata:
-  name: example-labeler
+  name: example-tagger
   namespace: default
 spec:
   labels:

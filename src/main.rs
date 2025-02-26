@@ -1,5 +1,5 @@
-use nslabeler::crd::Labeler;
-use nslabeler::status;
+use tagging_forge::crd::Tagger;
+use tagging_forge::status;
 
 use futures::stream::StreamExt;
 use kube::runtime::watcher::Config;
@@ -39,14 +39,14 @@ async fn main() -> Result<(), kube::Error> {
         .expect("Expected a valid KUBECONFIG environment variable.");
 
     // Preparation of resources used by the `kube_runtime::Controller`
-    let crd_api: Api<Labeler> = Api::all(kubeconfig.clone());
+    let crd_api: Api<Tagger> = Api::all(kubeconfig.clone());
     let context: Arc<ContextData> = Arc::new(ContextData::new(kubeconfig.clone()));
 
     // The controller comes from the `kube_runtime` crate and manages the reconciliation process.
     // It requires the following information:
-    // - `kube::Api<T>` this controller "owns". In this case, `T = Labeler`, as this controller owns the `Labeler` resource,
-    // - `kube::runtime::watcher::Config` can be adjusted for precise filtering of `Labeler` resources before the actual reconciliation, e.g. by label,
-    // - `reconcile` function with reconciliation logic to be called each time a resource of `Labeler` kind is created/updated/deleted,
+    // - `kube::Api<T>` this controller "owns". In this case, `T = Tagger`, as this controller owns the `Tagger` resource,
+    // - `kube::runtime::watcher::Config` can be adjusted for precise filtering of `Tagger` resources before the actual reconciliation, e.g. by label,
+    // - `reconcile` function with reconciliation logic to be called each time a resource of `Tagger` kind is created/updated/deleted,
     // - `on_error` function to call whenever reconciliation fails.
     Controller::new(crd_api.clone(), Config::default())
         .run(reconcile, on_error, context)
@@ -65,17 +65,17 @@ async fn main() -> Result<(), kube::Error> {
     Ok(())
 }
 
-async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action, Error> {
+async fn reconcile(cr: Arc<Tagger>, context: Arc<ContextData>) -> Result<Action, Error> {
     let client: Client = context.client.clone(); // The `Client` is shared -> a clone from the reference is obtained
 
-    // The resource of `Labeler` kind is required to have a namespace set. However, it is not guaranteed
+    // The resource of `Tagger` kind is required to have a namespace set. However, it is not guaranteed
     // the resource will have a `namespace` set. Therefore, the `namespace` field on object's metadata
     // is optional and Rust forces the programmer to check for it's existence first.
     let namespace: String = match cr.namespace() {
         None => {
             // If there is no namespace to deploy to defined, reconciliation ends with an error immediately.
             return Err(Error::UserInputError(
-                "Expected Labeler resource to be namespaced. Can't deploy to an unknown namespace."
+                "Expected Tagger resource to be namespaced. Can't deploy to an unknown namespace."
                     .to_owned(),
             ));
         }
@@ -84,9 +84,9 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
         Some(namespace) => namespace,
     };
 
-    let name = cr.name_any(); // Name of the Labeler resource is used to name the subresources as well.
+    let name = cr.name_any(); // Name of the Tagger resource is used to name the subresources as well.
 
-    let labeler = cr.as_ref();
+    let tagger = cr.as_ref();
     // Get all namespaces on the cluster
     let namespaces: Api<Namespace> = Api::all(client.clone());
     let ns_list = namespaces.list(&ListParams::default()).await?;
@@ -94,7 +94,7 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
     for ns in ns_list {
         let ns_name = ns.metadata.name.as_deref().unwrap_or("unnamed");
         
-        if labeler.spec.excludelist.contains(&ns_name.to_string()) {
+        if tagger.spec.excludelist.contains(&ns_name.to_string()) {
             continue;
         }
 
@@ -104,7 +104,7 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
         // Handle labels
         {
             let mut labels = updated_ns.metadata.labels.unwrap_or_default();
-            for label in &labeler.spec.labels {
+            for label in &tagger.spec.labels {
                 let current_value = labels.get(&label.key);
                 if current_value != Some(&label.value) {
                     needs_update = true;
@@ -117,7 +117,7 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
         // Handle annotations
         {
             let mut annotations = updated_ns.metadata.annotations.unwrap_or_default();
-            for annotation in &labeler.spec.annotations {
+            for annotation in &tagger.spec.annotations {
                 let current_value = annotations.get(&annotation.key);
                 if current_value != Some(&annotation.value) {
                     needs_update = true;
@@ -136,13 +136,13 @@ async fn reconcile(cr: Arc<Labeler>, context: Arc<ContextData>) -> Result<Action
         }
     }
     
-    status::patch(client.clone(), &name, &namespace, true).await?;
+    status::patch(client.clone(), &name, &namespace, true, vec![]).await?;
     status::print(client.clone(), &name, &namespace).await?;
 
     Ok(Action::requeue(Duration::from_secs(30)))
 }
 
-fn on_error(cr: Arc<Labeler>, error: &Error, context: Arc<ContextData>) -> Action {
+fn on_error(cr: Arc<Tagger>, error: &Error, context: Arc<ContextData>) -> Action {
     // Clone the necessary data
     let client = context.client.clone();
 
@@ -155,7 +155,7 @@ fn on_error(cr: Arc<Labeler>, error: &Error, context: Arc<ContextData>) -> Actio
     );
     // Use the existing Tokio runtime to spawn the async task
     tokio::spawn(async move {
-        match status::patch(client, &name, &namespace, false).await {
+        match status::patch(client, &name, &namespace, false, vec![]).await {
             Ok(_) => {
                 info!("Updated status with reconcile error")
             }
@@ -180,8 +180,8 @@ pub enum Error {
         #[from]
         source: kube::Error,
     },
-    /// Error in user input or Labeler resource definition, typically missing fields.
-    #[error("Invalid Labeler CRD: {0}")]
+    /// Error in user input or Tagger resource definition, typically missing fields.
+    #[error("Invalid Tagger CRD: {0}")]
     UserInputError(String),
 }
 pub type Result<T, E = Error> = std::result::Result<T, E>;

@@ -1,13 +1,13 @@
-use crate::crd::Labeler;
+use crate::crd::Tagger;
 use kube::api::{Patch, PatchParams};
 use kube::{Api, Client, Error};
 use serde_json::{json, Value};
 
-pub async fn add(client: Client, name: &str, namespace: &str) -> Result<Labeler, Error> {
-    let api: Api<Labeler> = Api::namespaced(client, namespace);
+pub async fn add(client: Client, name: &str, namespace: &str) -> Result<Tagger, Error> {
+    let api: Api<Tagger> = Api::namespaced(client, namespace);
     let finalizer: Value = json!({
         "metadata": {
-            "finalizers": ["labelers.cndev.nl/finalizer"]
+            "finalizers": ["taggers.cncp.nl/finalizer"]
         }
     });
 
@@ -15,8 +15,8 @@ pub async fn add(client: Client, name: &str, namespace: &str) -> Result<Labeler,
     api.patch(name, &PatchParams::default(), &patch).await
 }
 
-pub async fn delete(client: Client, name: &str, namespace: &str) -> Result<Labeler, Error> {
-    let api: Api<Labeler> = Api::namespaced(client, namespace);
+pub async fn delete(client: Client, name: &str, namespace: &str) -> Result<Tagger, Error> {
+    let api: Api<Tagger> = Api::namespaced(client, namespace);
     let finalizer: Value = json!({
         "metadata": {
             "finalizers": null
