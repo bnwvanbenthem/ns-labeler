@@ -1,4 +1,4 @@
-apiVersion: cndev.nl/v1beta1
+apiVersion: cncp.nl/v1beta1
 kind: Labeler
 metadata:
   name: example-labeler
