@@ -1,15 +1,18 @@
 use crate::crd::Tagger;
 
 use kube::{client::Client, Api};
+use serde_json::json;
 use std::sync::Arc;
 use tracing::*;
-use serde_json::json;
 
 use k8s_openapi::api::core::v1::Namespace;
 use kube::api::{Patch, PatchParams};
 
-pub async fn apply_tags(cr: Arc<Tagger>, client: Client, namespace: Namespace) -> Result<(), kube::Error> {
-
+pub async fn apply_tags(
+    cr: Arc<Tagger>,
+    client: Client,
+    namespace: Namespace,
+) -> Result<(), kube::Error> {
     let tagger = cr.as_ref();
     let ns = namespace.clone();
     let ns_name = namespace.metadata.name.unwrap_or("unknown".to_string());
@@ -56,7 +59,11 @@ pub async fn apply_tags(cr: Arc<Tagger>, client: Client, namespace: Namespace) -
     Ok(())
 }
 
-pub async fn delete_tags(cr: Arc<Tagger>, client: Client, namespace: Namespace) -> Result<(), kube::Error> {
+pub async fn delete_tags(
+    cr: Arc<Tagger>,
+    client: Client,
+    namespace: Namespace,
+) -> Result<(), kube::Error> {
     let tagger = cr.as_ref();
     let ns = namespace.clone();
     let ns_name = namespace.metadata.name.unwrap_or("unknown".to_string());
@@ -90,7 +97,8 @@ pub async fn delete_tags(cr: Arc<Tagger>, client: Client, namespace: Namespace) 
                 if current_value == Some(&annotation.value) {
                     needs_update = true;
                     annotations.remove(&annotation.key);
-                    annotations_patch.insert(annotation.key.clone(), json!(null)); // Explicitly set to null
+                    annotations_patch.insert(annotation.key.clone(), json!(null));
+                    // Explicitly set to null
                 }
             }
         }
@@ -117,50 +125,86 @@ pub async fn delete_tags(cr: Arc<Tagger>, client: Client, namespace: Namespace) 
 
 pub async fn apply_tagged_true_annotation(
     client: Client,
-    namespace: &str,
+    namespace: Namespace,
 ) -> Result<(), kube::Error> {
+    let ns_name = namespace.metadata.name.unwrap_or("unknown".to_string());
 
-    // Define the patch with the annotation
-    let patch = json!({
-        "metadata": {
-            "annotations": {
-                "tagger.cncp.nl": "tagged"
-            }
+    let annotations = namespace.metadata.annotations.unwrap_or_default();
+
+    // check if tagger annotion exists
+    let mut tagger_annotation = false;
+
+    for annotation in annotations {
+        if annotation.0 == "tagger.cncp.nl".to_string() {
+            tagger_annotation = true;
         }
-    });
+    }
 
-    let namespaces: Api<Namespace> = Api::all(client.clone());
+    if !tagger_annotation {
+        // Define the patch with the annotation
+        let patch = json!({
+            "metadata": {
+                "annotations": {
+                    "tagger.cncp.nl": "tagged"
+                }
+            }
+        });
 
-    // Apply the patch directly to the specified namespace
-    namespaces
-        .patch(&namespace, &PatchParams::default(), &Patch::Merge(&patch))
-        .await?;
+        let namespaces: Api<Namespace> = Api::all(client.clone());
 
-    info!("Applied annotation tagger.cncp.nl=tagged to namespace {}", &namespace);
+        // Apply the patch directly to the specified namespace
+        namespaces
+            .patch(&ns_name, &PatchParams::default(), &Patch::Merge(&patch))
+            .await?;
+
+        info!(
+            "Applied annotation tagger.cncp.nl=tagged to namespace {}",
+            &ns_name
+        );
+    }
+
     Ok(())
 }
 
 pub async fn delete_tagged_true_annotation(
     client: Client,
-    namespace: &str,
+    namespace: Namespace,
 ) -> Result<(), kube::Error> {
-    
-    // Define the patch with the annotation
-    let patch = json!({
-        "metadata": {
-            "annotations": {
-                "tagger.cncp.nl": null
-            }
+    let ns_name = namespace.metadata.name.unwrap_or("unknown".to_string());
+
+    let annotations = namespace.metadata.annotations.unwrap_or_default();
+
+    // check if tagger annotion exists
+    let mut tagger_annotation = false;
+
+    for annotation in annotations {
+        if annotation.0 == "tagger.cncp.nl".to_string() {
+            tagger_annotation = true;
         }
-    });
+    }
 
-    let namespaces: Api<Namespace> = Api::all(client.clone());
+    if tagger_annotation {
+        // Define the patch with the annotation
+        let patch = json!({
+            "metadata": {
+                "annotations": {
+                    "tagger.cncp.nl": null
+                }
+            }
+        });
 
-    // Apply the patch directly to the specified namespace
-    namespaces
-        .patch(&namespace, &PatchParams::default(), &Patch::Merge(&patch))
-        .await?;
+        let namespaces: Api<Namespace> = Api::all(client.clone());
 
-    info!("Applied annotation tagger.cncp.nl=tagged to namespace {}", &namespace);
+        // Apply the patch directly to the specified namespace
+        namespaces
+            .patch(&ns_name, &PatchParams::default(), &Patch::Merge(&patch))
+            .await?;
+
+        info!(
+            "Removed annotation tagger.cncp.nl=tagged to namespace {}",
+            &ns_name
+        );
+    }
+
     Ok(())
 }

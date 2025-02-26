@@ -93,16 +93,15 @@ async fn reconcile(cr: Arc<Tagger>, context: Arc<ContextData>) -> Result<Action,
     let ns_list = namespaces.list(&ListParams::default()).await?;
 
     for ns in ns_list {
-
         let ns_name = ns.metadata.name.as_deref().unwrap_or("unnamed");
 
         if tagger.spec.excludelist.contains(&ns_name.to_string()) {
             tags::delete_tags(cr.clone(), client.clone(), ns.clone()).await?;
-            tags::delete_tagged_true_annotation(client.clone(), &ns_name).await?;
+            tags::delete_tagged_true_annotation(client.clone(), ns.clone()).await?;
             continue;
         } else {
             tags::apply_tags(cr.clone(), client.clone(), ns.clone()).await?;
-            tags::apply_tagged_true_annotation(client.clone(), &ns_name).await?;
+            tags::apply_tagged_true_annotation(client.clone(), ns.clone()).await?;
         }
     }
 

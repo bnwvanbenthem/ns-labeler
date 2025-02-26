@@ -16,4 +16,4 @@ spec:
     - "kube-system"
     - "kube-node-lease"
     - "kube-public"
-    - "monitoring"
+    - "test"
