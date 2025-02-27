@@ -1,0 +1,53 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: tagging-operator-sa
+  namespace: default
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: tagging-operator-role
+rules:
+- apiGroups: ["cncp.nl"]
+  resources: ["taggers", "taggers/status"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: [""]
+  resources: ["namespaces"]
+  verbs: ["get", "list", "watch", "update", "patch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: tagging-operator-binding
+subjects:
+- kind: ServiceAccount
+  name: tagging-operator-sa
+  namespace: default
+roleRef:
+  kind: ClusterRole
+  name: tagging-operator-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tagging-operator
+  namespace: default
+  labels:
+    app: tagging-operator
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: tagging-operator
+  template:
+    metadata:
+      labels:
+        app: tagging-operator
+    spec:
+      serviceAccountName: tagging-operator-sa
+      containers:
+      - name: tagging-operator
+        image: ghcr.io/bartvanbenthem/tagging-operator:v0.1.1
+        imagePullPolicy: IfNotPresent
