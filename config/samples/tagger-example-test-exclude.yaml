@@ -1,0 +1,19 @@
+apiVersion: cncp.nl/v1beta1
+kind: Tagger
+metadata:
+  name: example-tagger
+  namespace: default
+spec:
+  labels:
+    - key: "customer"
+      value: "my-customer-a"
+    - key: "costcenter"
+      value: "department-a"
+  annotations:
+    - key: "customer"
+      value: "my-customer-a"
+  excludeList:
+    - "kube-system"
+    - "kube-node-lease"
+    - "kube-public"
+    - "test"

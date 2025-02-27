@@ -8,7 +8,6 @@ use tracing::*;
 use k8s_openapi::api::core::v1::Namespace;
 use kube::api::{Patch, PatchParams};
 
-
 const TAGGER: &str = "tagger.cncp.nl";
 
 pub async fn apply_tags(

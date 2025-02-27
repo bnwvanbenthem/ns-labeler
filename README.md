@@ -4,7 +4,7 @@ Kubernetes operator to automate the label and annotation logic through a custom 
 ## Build container
 ```bash
 source ../00-ENV/env.sh
-CVERSION="0.1.1"
+CVERSION="v0.1.2"
 
 docker login ghcr.io -u bartvanbenthem -p $CR_PAT
 
@@ -12,6 +12,12 @@ docker build -t tagging-operator:$CVERSION .
 
 docker tag tagging-operator:$CVERSION ghcr.io/bartvanbenthem/tagging-operator:$CVERSION
 docker push ghcr.io/bartvanbenthem/tagging-operator:$CVERSION
+
+# test image
+docker run --rm -it --entrypoint /bin/sh tagging-operator:$CVERSION
+
+/# ls -l /usr/local/bin/tagging_operator
+/# /usr/local/bin/tagging_operator
 ```
 
 ## Deploy Operator

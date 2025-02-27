@@ -4,6 +4,7 @@ use tagging_operator::tags;
 
 use futures::stream::StreamExt;
 use kube::runtime::watcher::Config;
+use kube::Config as KubeConfig;
 use kube::ResourceExt;
 use kube::{client::Client, runtime::controller::Action, runtime::Controller, Api};
 use std::sync::Arc;
@@ -34,10 +35,11 @@ impl ContextData {
 async fn main() -> Result<(), kube::Error> {
     tracing_subscriber::fmt::init();
     // First, a Kubernetes client must be obtained using the `kube` crate
-    // The client will later be moved to the custom controller
-    let kubeconfig: Client = Client::try_default()
+    // Attempt to infer KubeConfig
+    let config = KubeConfig::infer()
         .await
-        .expect("Expected a valid KUBECONFIG environment variable.");
+        .map_err(|e| kube::Error::InferConfig(e))?;
+    let kubeconfig: Client = Client::try_from(config)?;
 
     // Preparation of resources used by the `kube_runtime::Controller`
     let crd_api: Api<Tagger> = Api::all(kubeconfig.clone());

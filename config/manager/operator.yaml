@@ -49,5 +49,5 @@ spec:
       serviceAccountName: tagging-operator-sa
       containers:
       - name: tagging-operator
-        image: ghcr.io/bartvanbenthem/tagging-operator:v0.1.1
+        image: ghcr.io/bartvanbenthem/tagging-operator:v0.1.2
         imagePullPolicy: IfNotPresent
