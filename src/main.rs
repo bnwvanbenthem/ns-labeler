@@ -105,7 +105,7 @@ async fn reconcile(cr: Arc<Tagger>, context: Arc<ContextData>) -> Result<Action,
         }
     }
 
-    let tagged_list =  tags::get_all_tagged_true_annotations(client.clone()).await?;
+    let tagged_list = tags::get_all_tagged_true_annotations(client.clone()).await?;
     status::patch(client.clone(), &name, &namespace, true, tagged_list).await?;
 
     status::print(client.clone(), &name, &namespace).await?;

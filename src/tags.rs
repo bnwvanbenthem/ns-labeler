@@ -2,11 +2,14 @@ use crate::crd::Tagger;
 
 use kube::{client::Client, Api};
 use serde_json::json;
-use std::sync::Arc;
+use std::{collections::BTreeMap, sync::Arc};
 use tracing::*;
 
 use k8s_openapi::api::core::v1::Namespace;
 use kube::api::{Patch, PatchParams};
+
+
+const TAGGER: &str = "tagger.cncp.nl";
 
 pub async fn apply_tags(
     cr: Arc<Tagger>,
@@ -128,24 +131,14 @@ pub async fn apply_tagged_true_annotation(
     namespace: Namespace,
 ) -> Result<(), kube::Error> {
     let ns_name = namespace.metadata.name.unwrap_or("unknown".to_string());
-
     let annotations = namespace.metadata.annotations.unwrap_or_default();
 
-    // check if tagger annotion exists
-    let mut tagger_annotation = false;
-
-    for annotation in annotations {
-        if annotation.0 == "tagger.cncp.nl".to_string() {
-            tagger_annotation = true;
-        }
-    }
-
-    if !tagger_annotation {
+    if !check_for_tagged_annotation(annotations) {
         // Define the patch with the annotation
         let patch = json!({
             "metadata": {
                 "annotations": {
-                    "tagger.cncp.nl": "tagged"
+                    TAGGER.to_string(): "tagged"
                 }
             }
         });
@@ -171,24 +164,14 @@ pub async fn delete_tagged_true_annotation(
     namespace: Namespace,
 ) -> Result<(), kube::Error> {
     let ns_name = namespace.metadata.name.unwrap_or("unknown".to_string());
-
     let annotations = namespace.metadata.annotations.unwrap_or_default();
 
-    // check if tagger annotion exists
-    let mut tagger_annotation = false;
-
-    for annotation in annotations {
-        if annotation.0 == "tagger.cncp.nl".to_string() {
-            tagger_annotation = true;
-        }
-    }
-
-    if tagger_annotation {
+    if check_for_tagged_annotation(annotations) {
         // Define the patch with the annotation
         let patch = json!({
             "metadata": {
                 "annotations": {
-                    "tagger.cncp.nl": null
+                    TAGGER.to_string(): null
                 }
             }
         });
@@ -209,6 +192,19 @@ pub async fn delete_tagged_true_annotation(
     Ok(())
 }
 
+fn check_for_tagged_annotation(annotations: BTreeMap<String, String>) -> bool {
+    // check if tagger annotion exists
+    let mut tagger_annotation = false;
+
+    for annotation in annotations {
+        if annotation.0 == TAGGER.to_string() {
+            tagger_annotation = true;
+        }
+    }
+
+    tagger_annotation
+}
+
 pub async fn get_all_tagged_true_annotations(client: Client) -> Result<Vec<String>, kube::Error> {
     let namespaces: Api<Namespace> = Api::all(client.clone());
     let namespace_list = namespaces.list(&Default::default()).await?;
@@ -220,7 +216,7 @@ pub async fn get_all_tagged_true_annotations(client: Client) -> Result<Vec<Strin
         let annotations = namespace.metadata.annotations.unwrap_or_default();
 
         for annotation in annotations {
-            if annotation.0 == "tagger.cncp.nl".to_string() {
+            if annotation.0 == TAGGER.to_string() {
                 tagged_list.push(ns_name.clone());
             }
         }
