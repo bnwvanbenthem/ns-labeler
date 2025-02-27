@@ -208,3 +208,22 @@ pub async fn delete_tagged_true_annotation(
 
     Ok(())
 }
+
+pub async fn get_all_tagged_true_annotations(client: Client) -> Result<Vec<String>, kube::Error> {
+    let namespaces: Api<Namespace> = Api::all(client.clone());
+    let namespace_list = namespaces.list(&Default::default()).await?;
+
+    let mut tagged_list: Vec<String> = Vec::new();
+
+    for namespace in namespace_list.items {
+        let ns_name = namespace.metadata.name.unwrap_or("unknown".to_string());
+        let annotations = namespace.metadata.annotations.unwrap_or_default();
+
+        for annotation in annotations {
+            if annotation.0 == "tagger.cncp.nl".to_string() {
+                tagged_list.push(ns_name.clone());
+            }
+        }
+    }
+    Ok(tagged_list)
+}
