@@ -1,6 +1,13 @@
 # tagging-operator
 Kubernetes operator to automate the label and annotation logic through a custom resource. 
 
+### upcoming release
+Features in currently in development for the upcoming release:
+* IncludeList
+* exludePartial 
+* includePartial
+* tagginSets
+
 ## Build container
 ```bash
 source ../00-ENV/env.sh
